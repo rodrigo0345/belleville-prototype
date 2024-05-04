@@ -12,6 +12,12 @@
 
     <ItemGroup>
       <PackageReference Include="Aspire.StackExchange.Redis" Version="8.0.0-preview.6.24214.1" />
+      <PackageReference Include="Blazor.Bootstrap" Version="2.2.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\bootstrap\bootstrap.min.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\bootstrap\bootstrap.min.css.map" />
     </ItemGroup>
 
 </Project>

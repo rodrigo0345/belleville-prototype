@@ -1,4 +1,5 @@
 using BelleVillePrototype.ApiService.Infrastructure;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,14 +23,12 @@ builder.Services.AddHttpLogging(options => { });
 builder.Services.AddTransient<ILogger>(
     provider => provider.GetRequiredService<ILoggerFactory>().CreateLogger("BelleVillePrototype.ApiService"));
 
-// Add database context.
-/*
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlite("Data Source=app.db");
-});
-*/
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+
 builder.AddNpgsqlDbContext<ApplicationDbContext>("main");
+
+builder.Services.AddMediatR(config =>
+    config.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 
 var app = builder.Build();
@@ -42,9 +41,16 @@ app.CreateDbIfNotExists();
 
 if (app.Environment.IsDevelopment())
 {
-    using var serviceScope = app.Services.CreateScope();
-    var dbContext = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
+    try
+    {
+        using var serviceScope = app.Services.CreateScope();
+        var dbContext = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+    catch (Exception e)
+    {
+        app.Logger.LogWarning(e, "An error occurred while migrating the database.");
+    }
     
     
     // Map swagger api
