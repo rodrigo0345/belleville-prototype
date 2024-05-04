@@ -1,8 +1,12 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var apiService = builder.AddProject<Projects.BelleVillePrototype_ApiService>("apiservice");
+var cache = builder.AddRedis("cache");
+var postgresSql = builder.AddPostgres("main").WithPgAdmin();
 
-builder.AddProject<Projects.BelleVillePrototype_Web>("webfrontend")
+var apiService = builder.AddProject<Projects.BelleVillePrototype_ApiService>("api-service")
+    .WithReference(cache).WithReference(postgresSql);
+
+builder.AddProject<Projects.BelleVillePrototype_Web>("web-frontend")
     .WithExternalHttpEndpoints()
     .WithReference(apiService);
 

@@ -1,0 +1,32 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: main
+  labels:
+    app: main
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: main
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: main
+    spec:
+      containers:
+      - name: main
+        image: docker.io/library/postgres:16.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+        envFrom:
+        - configMapRef:
+            name: main-env
+        - secretRef:
+            name: main-secrets
+      terminationGracePeriodSeconds: 180

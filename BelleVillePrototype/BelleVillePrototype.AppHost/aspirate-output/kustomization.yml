@@ -1,0 +1,10 @@
+resources:
+- cache
+- main
+- api-service
+- web-frontend
+- dashboard.yml
+
+generatorOptions:
+  disableNameSuffixHash: true
+

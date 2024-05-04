@@ -10,4 +10,8 @@
         <ProjectReference Include="..\BelleVillePrototype.ServiceDefaults\BelleVillePrototype.ServiceDefaults.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Aspire.StackExchange.Redis" Version="8.0.0-preview.6.24214.1" />
+    </ItemGroup>
+
 </Project>

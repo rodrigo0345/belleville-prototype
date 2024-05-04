@@ -1,0 +1,9 @@
+{
+  "TemplatePath": null,
+  "ContainerSettings": {
+    "Registry": "docker.io",
+    "RepositoryPrefix": "rodrigo0345",
+    "Tag": null,
+    "Builder": "docker"
+  }
+}

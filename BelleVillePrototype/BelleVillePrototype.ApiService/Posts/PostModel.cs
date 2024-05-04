@@ -34,6 +34,7 @@ public class PostEntityConfiguration: IEntityTypeConfiguration<PostModel>
 }
 public readonly record struct PostId(Guid Value): IComparable<PostId>
 {
+    public static implicit operator Guid(PostId postId) => postId.Value;
     public int CompareTo(PostId other) => Value.CompareTo(other.Value);
     public static PostId Empty() => new(Guid.Empty);
     public static PostId NewPostId => new PostId(Guid.NewGuid());

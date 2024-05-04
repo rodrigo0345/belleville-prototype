@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-frontend
+  labels:
+    app: web-frontend
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: web-frontend
+    spec:
+      containers:
+      - name: web-frontend
+        image: docker.io/rodrigo0345/web-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        - containerPort: 8443
+        envFrom:
+        - configMapRef:
+            name: web-frontend-env
+      terminationGracePeriodSeconds: 180

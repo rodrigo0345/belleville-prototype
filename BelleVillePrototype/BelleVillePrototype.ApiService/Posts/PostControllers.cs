@@ -1,22 +1,26 @@
 using BelleVillePrototype.ApiService.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BelleVillePrototype.ApiService.Posts;
 
 namespace BelleVillePrototype.ApiService.Posts;
 
 [Route("posts")]
 public class PostControllers: Controller
 {
-    private ApplicationDbContext _dbContext;
+    private readonly ApplicationDbContext _dbContext;
+    private readonly ILogger _logger;
     public PostControllers(ILogger logger, ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
+        _logger = logger;
     }
     
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PostGetDto>>> GetPosts(
         [FromQuery]PostQueryDto query, CancellationToken ct)
     {
+        this._logger.LogInformation("Querying posts with {query}", query);
         if(!ModelState.IsValid)
             return BadRequest(ModelState);
         
@@ -39,7 +43,7 @@ public class PostControllers: Controller
     public async Task<ActionResult<PostGetDto>> GetPost(
         [FromRoute]Guid id, CancellationToken ct)
     {
-        var post = await _dbContext.Posts.FirstOrDefaultAsync(p => p.Id.Value == id, ct);
+        var post = await _dbContext.Posts.FirstOrDefaultAsync(p => p.Id == id, ct);
         if(post is null)
             return NotFound();
         
@@ -63,6 +67,7 @@ public class PostControllers: Controller
         _dbContext.Posts.Add(post);
         await _dbContext.SaveChangesAsync(ct);
         
-        return CreatedAtAction(nameof(GetPost), new { id = post.Id.Value }, post);
+        var postId = post.Id.Value;
+        return CreatedAtAction(nameof(GetPost), new { id = postId }, post);
     }
 }
