@@ -1,18 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.InteropServices;
-using BelleVillePrototype.ApiService.OptionType;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace BelleVillePrototype.ApiService.Posts;
+namespace BelleVillePrototype.ApiService.Entities;
 
 
 [Table("Posts")]
 [EntityTypeConfiguration(typeof(PostEntityConfiguration))]
-public class PostModel 
+public class PostEntity
 {
     [Key]
     public PostId Id { get; set; } = PostId.Empty();
@@ -20,16 +18,17 @@ public class PostModel
     public string? Author { get; set; }
 }
 
-public class PostEntityConfiguration: IEntityTypeConfiguration<PostModel>
+public class PostEntityConfiguration: IEntityTypeConfiguration<PostEntity>
 {
-    public void Configure(EntityTypeBuilder<PostModel> builder)
+    public void Configure(EntityTypeBuilder<PostEntity> builder)
     {
         builder
             .Property(b => b.Title)
             .IsRequired();
         
         builder.Property(b => b.Id)
-            .HasConversion(new PostIdValueConverter());
+            .HasConversion(new PostIdValueConverter())
+            .ValueGeneratedOnAdd();
     }
 }
 public readonly record struct PostId(Guid Value): IComparable<PostId>

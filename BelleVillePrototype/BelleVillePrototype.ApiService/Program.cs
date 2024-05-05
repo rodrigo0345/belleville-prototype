@@ -1,20 +1,30 @@
 using BelleVillePrototype.ApiService.Infrastructure;
+using Carter;
+using Carter.ResponseNegotiators.Newtonsoft;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire components.
 builder.AddServiceDefaults();
 
+builder.Services.AddCarter(configurator: c =>
+{
+    c.WithResponseNegotiator<NewtonsoftJsonResponseNegotiator>();
+});
+
 // Add logger
 builder.Services.AddLogging();
 
 // Add swagger
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "BelleVillePrototype.ApiService", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "BelleVillePrototype.ApiService", Version = "v1" });
 });
+
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
@@ -23,9 +33,16 @@ builder.Services.AddHttpLogging(options => { });
 builder.Services.AddTransient<ILogger>(
     provider => provider.GetRequiredService<ILoggerFactory>().CreateLogger("BelleVillePrototype.ApiService"));
 
+
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("BelleVilleDb"));
+});
+/*
 builder.AddNpgsqlDbContext<ApplicationDbContext>("main");
+*/
 
 builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssembly(typeof(Program).Assembly));
@@ -33,11 +50,10 @@ builder.Services.AddMediatR(config =>
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 app.UseHttpLogging();
-
-app.CreateDbIfNotExists();
 
 if (app.Environment.IsDevelopment())
 {
@@ -58,30 +74,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BelleVillePrototype.ApiService v1"));
 }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-            new WeatherForecast
-            (
-                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                Random.Shared.Next(-20, 55),
-                summaries[Random.Shared.Next(summaries.Length)]
-            ))
-        .ToArray();
-    return forecast;
-});
-
+app.UseRouting();
+app.MapCarter();
 app.MapControllers();
 app.MapDefaultEndpoints();
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

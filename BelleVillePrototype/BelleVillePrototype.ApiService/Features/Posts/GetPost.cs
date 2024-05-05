@@ -1,19 +1,26 @@
+using BelleVillePrototype.ApiService.Contracts;
+using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Infrastructure;
-using BelleVillePrototype.ApiService.Posts;
 using BelleVillePrototype.ApiService.Shared.Result;
+using Carter;
+using Carter.OpenApi;
 using FluentValidation;
+using Mapster;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-namespace BelleVillePrototype.ApiService.Features.Posts;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 public static class GetPost
 {
-    public class Command : IRequest<Result<PostModel>>
+    public class Command : IRequest<Result<PostEntity>>
     {
         public Guid Id { get; set; } = Guid.Empty;
     }
+    
+    public record ControllerResult(PostId Id, string Title, string? Author);
 
     
     public class Validator : AbstractValidator<Command>
@@ -24,7 +31,7 @@ public static class GetPost
         }
     }
 
-    internal sealed class Handler : IRequestHandler<Command, Result<PostModel>>
+    internal sealed class Handler : IRequestHandler<Command, Result<PostEntity>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IValidator<Command> _validator;
@@ -35,12 +42,12 @@ public static class GetPost
             _validator = validator;
         }
         
-        public async Task<Result<PostModel>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<PostEntity>> Handle(Command request, CancellationToken cancellationToken)
         {
             var validationResult = _validator.Validate(request);
             if (!validationResult.IsValid)
             {
-                return new Result<PostModel>(null, error: validationResult.ToString());
+                return new Result<PostEntity>(null, error: validationResult.ToString());
             }
             
             try
@@ -48,34 +55,38 @@ public static class GetPost
                 var post = await _dbContext.Posts.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
                 if (post is null)
                 {
-                    return new Result<PostModel>(null, error: "Post not found");
+                    return new Result<PostEntity>(null, error: "Post not found");
                 }
-                return new Result<PostModel>(post);
+                return new Result<PostEntity>(post);
             }
             catch (Exception e)
             {
-                return new Result<PostModel>(null, error: e.Message);
+                return new Result<PostEntity>(null, error: e.Message);
             }
         }
     }
 }
-
-public class GetPostController: ControllerBase
+public class GetPostEndpoint : ICarterModule 
 {
-    
-    public record ControllerResult(PostId Id, string Title, string? Author);
-    
-    [HttpGet("random")]
-    public async Task<ActionResult<ControllerResult>> GetPost([FromBody] GetPost.Command command, [FromServices] IMediator mediator)
+    public void AddRoutes(IEndpointRouteBuilder app)
     {
-        var result = await mediator.Send(command);
-        if (result.Error.IsSome)
+        app.MapGet("posts", async ([FromQuery] Guid id, ISender sender) =>
         {
-            var error = result.Error.OrElse("Some error occurred, no message was left");
-            return BadRequest(error);
-        }
+            var command = new GetPost.Command()
+            {
+                Id = id
+            };
+            
+            var result = await sender.Send(command);
+            if (result.Error.IsSome)
+            {
+                var error = result.Error.OrElse("Some error occurred, no message was left");
+                return Results.Problem(detail: error, statusCode: 500);
+            }
 
-        var content = result.Content.OrElseThrow();
-        return Ok(new ControllerResult(content.Id, content.Title, content.Author));
+            var content = result.Content.OrElseThrow();
+            return Results.Ok(new GetPost.ControllerResult(content.Id, content.Title, content.Author));
+        }).IncludeInOpenApi();
     }
-} 
+}
+

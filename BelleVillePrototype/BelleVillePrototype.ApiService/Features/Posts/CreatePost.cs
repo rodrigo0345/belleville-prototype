@@ -1,85 +1,90 @@
+using BelleVillePrototype.ApiService.Contracts;
+using BelleVillePrototype.ApiService.Entities;
+using BelleVillePrototype.ApiService.Features.Posts;
 using BelleVillePrototype.ApiService.Infrastructure;
-using BelleVillePrototype.ApiService.Posts;
 using BelleVillePrototype.ApiService.Shared.Result;
+using Carter;
+using Carter.OpenApi;
 using FluentValidation;
+using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace BelleVillePrototype.ApiService.Features.Posts;
-
-public static class CreatePost
+namespace BelleVillePrototype.ApiService.Features.Posts
 {
-    public class Command : IRequest<Result<Guid>>
+    public static class CreatePost
     {
-        public string Title { get; set; } = String.Empty;
-        public string? Author { get; set; } 
-    }
-    
-    public class Validator : AbstractValidator<Command>
-    {
-        public Validator()
+        public class Command : IRequest<Result<Guid>>
         {
-            RuleFor(x => x.Title).NotEmpty();
+            public string Title { get; set; } = String.Empty;
+            public string? Author { get; set; } 
         }
-    }
 
-    internal sealed class Handler : IRequestHandler<Command, Result<Guid>>
-    {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly IValidator<Command> _validator;
-
-        public Handler(ApplicationDbContext dbContext, IValidator<Command> validator)
-        {
-            _dbContext = dbContext;
-            _validator = validator;
-        }
+        public record ControllerResult(Guid Id);
         
-        public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
+        public class Validator : AbstractValidator<Command>
         {
-            var validationResult = _validator.Validate(request);
-            if (!validationResult.IsValid)
+            public Validator()
             {
-                return new Result<Guid>(Guid.Empty, error: validationResult.ToString());
+                RuleFor(x => x.Title).NotEmpty();
             }
-            var post = new PostModel { Title = request.Title, Author = request.Author };
+        }
+
+        internal sealed class Handler : IRequestHandler<Command, Result<Guid>>
+        {
+            private readonly ApplicationDbContext _dbContext;
+            private readonly IValidator<Command> _validator;
+            private readonly ILogger _logger;
+
+            public Handler(ApplicationDbContext dbContext, IValidator<Command> validator, ILogger logger)
+            {
+                _dbContext = dbContext;
+                _validator = validator;
+                _logger = logger;
+            }
             
-            try
+            public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
             {
-                await _dbContext.Posts.AddAsync(post, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-                return new Result<Guid>(content: post.Id.Value);
-            }
-            catch (Exception e)
-            {
-                return new Result<Guid>(Guid.Empty, error: e.Message);
+                var validationResult = _validator.Validate(request);
+                if (!validationResult.IsValid)
+                {
+                    return new Result<Guid>(Guid.Empty, error: validationResult.ToString());
+                }
+                var post = new PostEntity { Title = request.Title, Author = request.Author };
+                
+                try
+                {
+                    _dbContext.Posts.Add(post);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation("Post created: {PostId}", post.Id);
+                    return new Result<Guid>(content: post.Id.Value);
+                }
+                catch (Exception e)
+                {
+                    return new Result<Guid>(Guid.Empty, error: e.Message);
+                }
             }
         }
     }
 }
-
-[Route("api/posts")]
-public class CreatePostController : ControllerBase
+public class Endpoint : ICarterModule
 {
-    public struct ControllerResult
+    public void AddRoutes(IEndpointRouteBuilder app)
     {
-        public Guid id { get; set; } 
-    }
-    
-    [HttpPost("random")]
-    public async Task<ActionResult<ControllerResult>> CreatePostAsync([FromBody] CreatePost.Command command, [FromServices] IMediator mediator)
-    {
-        var postId = await mediator.Send(command);
-        if (postId.Error.IsSome)
+        app.MapPost("posts", async (CreatePostRequest request, ISender sender) =>
         {
-            var error = postId.Error.OrElse("Some error occurred, no message was left");
-            return BadRequest(error);
-        }
-        
-        var content = postId.Content.OrElseThrow();
-        return Ok(new ControllerResult
-        {
-            id = content
-        });
+            var command = request.Adapt<CreatePost.Command>();
+            
+            var result = await sender.Send(command);
+            if (result.Error.IsSome)
+            {
+                var error = result.Error.OrElse("Some error occurred, no message was left");
+                return Results.Problem(detail: error, statusCode: 500);
+            }
+
+            var content = result.Content.OrElseThrow();
+            return Results.Ok(new CreatePost.ControllerResult(content));
+        }).IncludeInOpenApi();
     }
-} 
+}
