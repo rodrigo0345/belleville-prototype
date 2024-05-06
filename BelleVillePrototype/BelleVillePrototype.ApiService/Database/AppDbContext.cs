@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using BelleVillePrototype.ApiService.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -14,4 +15,17 @@ public class ApplicationDbContext : IdentityDbContext<UserEntity, IdentityRole<G
     }
 
     public DbSet<PostEntity> Posts { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        
+        List<IdentityRole<Guid>> roles = new()
+        {
+            new IdentityRole<Guid> {Id = Guid.NewGuid(), Name = "Admin", NormalizedName = "ADMIN"},
+            new IdentityRole<Guid> {Id = Guid.NewGuid(), Name = "User", NormalizedName = "USER"}
+        };
+        modelBuilder.Entity<IdentityRole<Guid>>().HasData(roles);
+    }
 }

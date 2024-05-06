@@ -13,9 +13,6 @@ public class UserEntity: IdentityUser<Guid>
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
-
-    [EmailAddress(ErrorMessage = "Por favor, insira um e-mail válido.")]
-    public string Email { get; set; } = string.Empty;
 }
 
 public class UserEntityConfiguration: IEntityTypeConfiguration<UserEntity>
@@ -34,4 +31,10 @@ public class UserEntityConfiguration: IEntityTypeConfiguration<UserEntity>
         builder.Property(b => b.Phone)
             .IsRequired();
     }
+}
+
+public enum UserEntityRole
+{
+    Admin,
+    User
 }

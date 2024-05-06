@@ -3,6 +3,7 @@ using System;
 using BelleVillePrototype.ApiService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BelleVillePrototype.ApiService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240506143636_UniqueEmail")]
+    partial class UniqueEmail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -147,13 +150,13 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("db9a7d88-7f6d-409d-b68d-a0676bc8935a"),
+                            Id = new Guid("913bdc6f-ba36-4430-a7e6-8cef3dff8f04"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("62216533-7b86-42dc-b2de-569f8555197d"),
+                            Id = new Guid("dffc8e96-755f-4d39-8e22-61cbc4cad2cc"),
                             Name = "User",
                             NormalizedName = "USER"
                         });
