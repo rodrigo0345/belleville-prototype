@@ -1,6 +1,7 @@
 using System.Text;
 using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Infrastructure;
+using BelleVillePrototype.ApiService.Shared.Tokens;
 using Carter;
 using Carter.ResponseNegotiators.Newtonsoft;
 using FluentValidation;
@@ -45,6 +46,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("BelleVilleDb"));
 });
+
+builder.Services.AddScoped<ITokenService<Guid>, TokenService<Guid>>();
 
 builder.Services.AddIdentity<UserEntity, IdentityRole<Guid>>(options =>
 {

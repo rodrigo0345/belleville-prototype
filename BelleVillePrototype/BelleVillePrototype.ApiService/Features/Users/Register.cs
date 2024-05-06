@@ -1,8 +1,10 @@
 using BelleVillePrototype.ApiService.Contracts;
 using BelleVillePrototype.ApiService.Contracts.UserContract;
 using BelleVillePrototype.ApiService.Entities;
+using BelleVillePrototype.ApiService.Features.Users;
 using BelleVillePrototype.ApiService.Infrastructure;
 using BelleVillePrototype.ApiService.Shared.Result;
+using BelleVillePrototype.ApiService.Shared.Tokens;
 using Carter;
 using Carter.OpenApi;
 using FluentValidation;
@@ -17,7 +19,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 public static class Register 
 {
-    public class Command : IRequest<Result<QueryUser>>
+    public class Command : IRequest<Result<RegisterResult>>
     {
         public string Email { get; set; }
         public string Password { get; set; }
@@ -28,7 +30,7 @@ public static class Register
         public string Username { get; set; }
     }
 
-    public class ControllerResult : QueryUser
+    public class ControllerResult : RegisterResult
     {
     }
 
@@ -46,24 +48,28 @@ public static class Register
         }
     }
 
-    internal sealed class Handler : IRequestHandler<Command, Result<QueryUser>>
+    internal sealed class Handler : IRequestHandler<Command, Result<RegisterResult>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IValidator<Command> _validator;
         private readonly UserManager<UserEntity> _userManager;
+        private readonly ITokenService<Guid> _tokenService;
 
-        public Handler(ApplicationDbContext dbContext, IValidator<Command> validator, UserManager<UserEntity> userManager)
+        public Handler(ApplicationDbContext dbContext, IValidator<Command> validator, UserManager<UserEntity> userManager, ITokenService<Guid> tokenService)
         {
             _dbContext = dbContext;
             _validator = validator;
             _userManager = userManager;
+            _tokenService = tokenService;
         }
         
-        public async Task<Result<QueryUser>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<RegisterResult>> Handle(Command request, CancellationToken cancellationToken)
         {
             var validationResult = _validator.Validate(request);
             if (!validationResult.IsValid)
-                return new Result<QueryUser>(null, error: validationResult.ToString());
+                return new Result<RegisterResult>(null, error: validationResult.ToString());
+            if (!request.Email.Contains('@'))
+                return new Result<RegisterResult>(null, error: "Invalid email");
             
             UserEntity user =  new UserEntity
             {
@@ -81,7 +87,7 @@ public static class Register
                 {
                     var roleResult = await _userManager.AddToRoleAsync(user, "User");
                     if (roleResult.Succeeded)
-                        return new Result<QueryUser>(
+                        return new Result<RegisterResult>(
                         new (){
                             Id = user.Id,
                             Email = user.Email,
@@ -89,18 +95,19 @@ public static class Register
                             LastName = user.LastName,
                             Phone = user.Phone,
                             Username = user.UserName,
-                            Role = UserEntityRole.User
+                            Role = UserEntityRole.User.ToString(),
+                            Token = _tokenService.GenerateToken(user)
                         });
                     
                     // Em caso de erro ao associar a role ao utilizador 
-                    return new Result<QueryUser>(null, error: roleResult.Errors.FirstOrDefault().Description.ToString());
+                    return new Result<RegisterResult>(null, error: roleResult.Errors.FirstOrDefault().Description.ToString());
                 }
                 // Em caso de erro ao criar o utilizador
-                return new Result<QueryUser>(null, error: createdUser.Errors.FirstOrDefault().Description.ToString());
+                return new Result<RegisterResult>(null, error: createdUser.Errors.FirstOrDefault().Description.ToString());
             }
             catch (Exception e)
             {
-                return new Result<QueryUser>(null, error: e.StackTrace);
+                return new Result<RegisterResult>(null, error: e.StackTrace);
             }
         }
     }
@@ -121,7 +128,7 @@ public class RegisterEndpoint: ICarterModule
             }
 
             var content = result.Content.OrElseThrow();
-            var controllerResult = content.Adapt<QueryUser>();
+            var controllerResult = content.Adapt<Register.ControllerResult>();
             return Results.Ok(controllerResult);
         }).IncludeInOpenApi();
     }
