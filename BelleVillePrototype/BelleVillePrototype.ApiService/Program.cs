@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Infrastructure;
@@ -29,6 +30,29 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "BelleVillePrototype.ApiService", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
 });
 
 
@@ -47,7 +71,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("BelleVilleDb"));
 });
 
-builder.Services.AddScoped<ITokenService<Guid>, TokenService<Guid>>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddIdentity<UserEntity, IdentityRole<Guid>>(options =>
 {
@@ -58,7 +82,8 @@ builder.Services.AddIdentity<UserEntity, IdentityRole<Guid>>(options =>
     options.Password.RequiredLength = 1;
     options.Password.RequiredUniqueChars = 1;
     options.User.RequireUniqueEmail = true;
-}).AddEntityFrameworkStores<ApplicationDbContext>();
+}).AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddRoles<IdentityRole<Guid>>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -79,8 +104,27 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        RoleClaimType = ClaimTypes.Role
     };
+    options.Challenge = JwtBearerDefaults.AuthenticationScheme;
 });
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .SetIsOriginAllowedToAllowWildcardSubdomains()
+                .AllowCredentials();
+        });
+});
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("Admin", policy => policy.RequireRole(UserEntityRole.Admin.ToString()))
+    .AddPolicy("User", policy => policy.RequireRole(UserEntityRole.User.ToString(), UserEntityRole.Admin.ToString()));
 
 /*
 builder.AddNpgsqlDbContext<ApplicationDbContext>("main");
@@ -91,6 +135,7 @@ builder.Services.AddMediatR(config =>
 
 
 var app = builder.Build();
+
 
 
 // Configure the HTTP request pipeline.
@@ -113,14 +158,24 @@ if (app.Environment.IsDevelopment())
     
     // Map swagger api
     app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BelleVillePrototype.ApiService v1"));
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "BelleVillePrototype.ApiService v1");
+        c.DisplayRequestDuration();
+    });
 }
 
+
+app.UseCors(); 
+app.UseRouting();
+
+// tem de estar entre UseRouting e UseEndpoints
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseRouting();
 app.MapCarter();
 app.MapControllers();
+
 app.MapDefaultEndpoints();
+
 app.Run();

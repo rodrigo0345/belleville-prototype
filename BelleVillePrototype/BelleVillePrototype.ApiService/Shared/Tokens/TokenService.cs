@@ -9,25 +9,33 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 
 namespace BelleVillePrototype.ApiService.Shared.Tokens;
 
-public class TokenService<IdentityUserKeyType>: ITokenService<IdentityUserKeyType> where IdentityUserKeyType: struct, IEquatable<IdentityUserKeyType>
+public class TokenService: ITokenService
 {
     // get this from appsettings.json
     private readonly IConfiguration _config;
     private readonly SymmetricSecurityKey _key;
+    private readonly UserManager<UserEntity> _userManager;
     
-    public TokenService(IConfiguration config)
+    public TokenService(IConfiguration config, UserManager<UserEntity> userManager)
     {
         _config = config;
         _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        _userManager = userManager;
     }
 
-    public string GenerateToken(IdentityUser<IdentityUserKeyType> user, uint expirationMinutes = 30)
+    public async Task<string> GenerateToken(UserEntity user, uint expirationMinutes = 30)
     {
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.GivenName, user.UserName),
         };
+        
+        var roles = await _userManager.GetRolesAsync(user);
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
         
         var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
         var tokenDescriptor = new SecurityTokenDescriptor

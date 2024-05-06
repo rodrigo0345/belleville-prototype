@@ -21,11 +21,41 @@ public class ApplicationDbContext : IdentityDbContext<UserEntity, IdentityRole<G
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         
-        List<IdentityRole<Guid>> roles = new()
-        {
-            new IdentityRole<Guid> {Id = Guid.NewGuid(), Name = "Admin", NormalizedName = "ADMIN"},
-            new IdentityRole<Guid> {Id = Guid.NewGuid(), Name = "User", NormalizedName = "USER"}
-        };
+        var roles = Enum.GetValues(typeof(UserEntityRole))
+            .Cast<UserEntityRole>()
+            .Select(r => new IdentityRole<Guid>
+            {
+                Id = Guid.NewGuid(),
+                Name = r.ToString(),
+                NormalizedName = r.ToString().ToUpper()
+            })
+            .ToList();
+
+        // Seed roles
         modelBuilder.Entity<IdentityRole<Guid>>().HasData(roles);
+
+        // Add admin user
+        var adminUser = new UserEntity
+        {
+            Id = Guid.NewGuid(),
+            UserName = "admin",
+            NormalizedUserName = "ADMIN",
+            Email = "admin@gmail.com",
+            NormalizedEmail = "ADMIN@GMAIL.COM",
+            EmailConfirmed = true,
+            SecurityStamp = Guid.NewGuid().ToString(),
+        };
+
+        PasswordHasher<UserEntity> passwordHasher = new();
+        adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "admin");
+        modelBuilder.Entity<UserEntity>().HasData(adminUser);
+
+        // Add role to admin user
+        var adminRoleId = roles.First(x => x.Name == nameof(UserEntityRole.Admin)).Id;
+        modelBuilder.Entity<IdentityUserRole<Guid>>().HasData(new IdentityUserRole<Guid>
+        {
+            RoleId = adminRoleId,
+            UserId = adminUser.Id
+        });
     }
 }

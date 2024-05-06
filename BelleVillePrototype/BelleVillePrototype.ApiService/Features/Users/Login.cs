@@ -43,9 +43,14 @@ public static class Login
         private readonly IValidator<Command> _validator;
         private readonly SignInManager<UserEntity> _signInManager;
         private readonly UserManager<UserEntity> _userManager;
-        private readonly ITokenService<Guid> _tokenService;
+        private readonly ITokenService _tokenService;
 
-        public Handler(ApplicationDbContext dbContext, IValidator<Command> validator, UserManager<UserEntity> userManager, SignInManager<UserEntity> signInManager, ITokenService<Guid> tokenService)
+        public Handler(
+            ApplicationDbContext dbContext, 
+            IValidator<Command> validator, 
+            UserManager<UserEntity> userManager, 
+            SignInManager<UserEntity> signInManager, 
+            ITokenService tokenService)
         {
             _dbContext = dbContext;
             _validator = validator;
@@ -70,7 +75,7 @@ public static class Login
             if (!result.Succeeded)
                 return new Result<LoginResult>(null, error: "Email or password incorrect");
             
-            var token = _tokenService.GenerateToken(user);
+            var token = await _tokenService.GenerateToken(user);
             
             var role = await _userManager.GetRolesAsync(user);
             UserEntityRole roleConverted = Enum.Parse<UserEntityRole>(role.FirstOrDefault());

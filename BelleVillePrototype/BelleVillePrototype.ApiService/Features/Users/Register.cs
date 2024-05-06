@@ -53,9 +53,9 @@ public static class Register
         private readonly ApplicationDbContext _dbContext;
         private readonly IValidator<Command> _validator;
         private readonly UserManager<UserEntity> _userManager;
-        private readonly ITokenService<Guid> _tokenService;
+        private readonly ITokenService _tokenService;
 
-        public Handler(ApplicationDbContext dbContext, IValidator<Command> validator, UserManager<UserEntity> userManager, ITokenService<Guid> tokenService)
+        public Handler(ApplicationDbContext dbContext, IValidator<Command> validator, UserManager<UserEntity> userManager, ITokenService tokenService)
         {
             _dbContext = dbContext;
             _validator = validator;
@@ -85,7 +85,7 @@ public static class Register
                 var createdUser = await _userManager.CreateAsync(user, request.Password);
                 if (createdUser.Succeeded)
                 {
-                    var roleResult = await _userManager.AddToRoleAsync(user, "User");
+                    var roleResult = await _userManager.AddToRoleAsync(user, UserEntityRole.User.ToString());
                     if (roleResult.Succeeded)
                         return new Result<RegisterResult>(
                         new (){
@@ -96,7 +96,7 @@ public static class Register
                             Phone = user.Phone,
                             Username = user.UserName,
                             Role = UserEntityRole.User.ToString(),
-                            Token = _tokenService.GenerateToken(user)
+                            Token = await _tokenService.GenerateToken(user)
                         });
                     
                     // Em caso de erro ao associar a role ao utilizador 

@@ -3,6 +3,7 @@ using System;
 using BelleVillePrototype.ApiService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BelleVillePrototype.ApiService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240506161058_AdminAccount")]
+    partial class AdminAccount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,9 +123,9 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("b6f4dad2-65a3-4ed1-a325-0a8c962b09b1"),
+                            Id = new Guid("4682edb1-42ba-490e-b718-7b506a1cc514"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "15bc1e97-fb8d-437f-9275-a329a643f0ea",
+                            ConcurrencyStamp = "96e54658-526c-476f-9f06-5987713e3c31",
                             Email = "admin@gmail.com",
                             EmailConfirmed = true,
                             FirstName = "",
@@ -130,10 +133,10 @@ namespace BelleVillePrototype.ApiService.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEHgfGIHOnTGI70hhas2FcFkOIzDyRuxOeiTxx9d5BVuKRmiCVL/Z4gSoGCv/VbBYIQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKkQTz+gOl/FHX26QjYaytNS9FVzSTIYKUauHxqeKFWAPW2cltMFM8Uj2oUQcqdKTg==",
                             Phone = "",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "9d73e154-2869-41f3-a8c6-d7cb7eb7fefb",
+                            SecurityStamp = "9a104b85-403f-4c40-bbec-1c567982b456",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         });
@@ -168,13 +171,13 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("6f0469f5-fd60-4a2a-8a06-1f3e7f8b0aba"),
+                            Id = new Guid("9b4a1467-815e-4a6b-834e-fe5db6e8d7f4"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("b3292c9a-e632-4016-b0e9-67e37a75cec4"),
+                            Id = new Guid("1170c28f-7a41-4012-b369-bff54897a5cc"),
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -262,13 +265,6 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("b6f4dad2-65a3-4ed1-a325-0a8c962b09b1"),
-                            RoleId = new Guid("6f0469f5-fd60-4a2a-8a06-1f3e7f8b0aba")
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>

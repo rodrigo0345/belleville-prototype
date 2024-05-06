@@ -8,6 +8,7 @@ using Carter.OpenApi;
 using FluentValidation;
 using Mapster;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -85,6 +86,6 @@ public class Endpoint : ICarterModule
 
             var content = result.Content.OrElseThrow();
             return Results.Ok(new CreatePost.ControllerResult(content));
-        }).IncludeInOpenApi();
+        }).IncludeInOpenApi().RequireAuthorization("Admin");
     }
 }
