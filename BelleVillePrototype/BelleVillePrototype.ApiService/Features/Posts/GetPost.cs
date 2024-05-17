@@ -1,17 +1,13 @@
-using BelleVillePrototype.ApiService.Contracts;
 using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Infrastructure;
-using BelleVillePrototype.ApiService.Shared.Result;
 using Carter;
 using Carter.OpenApi;
 using FluentValidation;
+using LanguageExt.Common;
 using Mapster;
 using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 public static class GetPost
 {
@@ -44,10 +40,10 @@ public static class GetPost
         
         public async Task<Result<PostEntity>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var validationResult = _validator.Validate(request);
+            var validationResult = await _validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
             {
-                return new Result<PostEntity>(null, error: validationResult.ToString());
+                return new Result<PostEntity>(new ValidationException(validationResult.Errors.FirstOrDefault()?.ErrorMessage.ToString()));
             }
             
             try
@@ -55,13 +51,13 @@ public static class GetPost
                 var post = await _dbContext.Posts.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
                 if (post is null)
                 {
-                    return new Result<PostEntity>(null, error: "Post not found");
+                    return new Result<PostEntity>(new Exception("Post não existe"));
                 }
                 return new Result<PostEntity>(post);
             }
             catch (Exception e)
             {
-                return new Result<PostEntity>(null, error: e.Message);
+                return new Result<PostEntity>(e);
             }
         }
     }
@@ -78,14 +74,9 @@ public class GetPostEndpoint : ICarterModule
             };
             
             var result = await sender.Send(command);
-            if (result.Error.IsSome)
-            {
-                var error = result.Error.OrElse("Some error occurred, no message was left");
-                return Results.Problem(detail: error, statusCode: 500);
-            }
-
-            var content = result.Content.OrElseThrow();
-            return Results.Ok(new GetPost.ControllerResult(content.Id, content.Title, content.Author));
+            return result.Match<IResult>(
+                entity => Results.Ok(entity.Adapt<GetPost.ControllerResult>()),
+                error => Results.Problem(detail: error.Message, statusCode: 400));
         }).IncludeInOpenApi();
     }
 }

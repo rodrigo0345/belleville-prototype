@@ -2,15 +2,12 @@ using BelleVillePrototype.ApiService.Contracts;
 using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Features.Posts;
 using BelleVillePrototype.ApiService.Infrastructure;
-using BelleVillePrototype.ApiService.Shared.Result;
 using Carter;
 using Carter.OpenApi;
 using FluentValidation;
+using LanguageExt.Common;
 using Mapster;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BelleVillePrototype.ApiService.Features.Posts
 {
@@ -50,7 +47,7 @@ namespace BelleVillePrototype.ApiService.Features.Posts
                 var validationResult = _validator.Validate(request);
                 if (!validationResult.IsValid)
                 {
-                    return new Result<Guid>(Guid.Empty, error: validationResult.ToString());
+                    return new Result<Guid>(new ValidationException(validationResult.Errors.FirstOrDefault()?.ErrorMessage.ToString()));
                 }
                 var post = new PostEntity { Title = request.Title, Author = request.Author };
                 
@@ -59,11 +56,11 @@ namespace BelleVillePrototype.ApiService.Features.Posts
                     _dbContext.Posts.Add(post);
                     await _dbContext.SaveChangesAsync(cancellationToken);
                     _logger.LogInformation("Post created: {PostId}", post.Id);
-                    return new Result<Guid>(content: post.Id.Value);
+                    return new Result<Guid>(post.Id.Value);
                 }
                 catch (Exception e)
                 {
-                    return new Result<Guid>(Guid.Empty, error: e.Message);
+                    return new Result<Guid>(e);
                 }
             }
         }
@@ -78,14 +75,10 @@ public class Endpoint : ICarterModule
             var command = request.Adapt<CreatePost.Command>();
             
             var result = await sender.Send(command);
-            if (result.Error.IsSome)
-            {
-                var error = result.Error.OrElse("Some error occurred, no message was left");
-                return Results.Problem(detail: error, statusCode: 500);
-            }
-
-            var content = result.Content.OrElseThrow();
-            return Results.Ok(new CreatePost.ControllerResult(content));
+            return result.Match<IResult>(
+                item => Results.Ok(new CreatePost.ControllerResult(item)),
+                error => Results.Problem(detail: error.Message, statusCode: 400)
+            );
         }).IncludeInOpenApi().RequireAuthorization("Admin");
     }
 }

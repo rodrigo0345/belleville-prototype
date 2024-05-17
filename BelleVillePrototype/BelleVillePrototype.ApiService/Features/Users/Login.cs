@@ -2,7 +2,6 @@ using BelleVillePrototype.ApiService.Contracts;
 using BelleVillePrototype.ApiService.Contracts.UserContract;
 using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Infrastructure;
-using BelleVillePrototype.ApiService.Shared.Result;
 using BelleVillePrototype.ApiService.Shared.Tokens;
 using Carter;
 using Carter.OpenApi;
@@ -16,6 +15,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using LanguageExt.Common;
 namespace BelleVillePrototype.ApiService.Features.Users;
 
 public static class Login 
@@ -61,19 +61,19 @@ public static class Login
         
         public async Task<Result<LoginResult>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var validationResult = _validator.Validate(request);
+            var validationResult = await _validator.ValidateAsync(request, cancellationToken);
             if (!validationResult.IsValid)
-                return new Result<LoginResult>(null, error: validationResult.ToString());
+                return new Result<LoginResult>(new ValidationException(validationResult.ToString()));
             if (!request.Email.Contains('@'))
-                return new Result<LoginResult>(null, error: "Invalid email");
+                return new Result<LoginResult>(new ValidationException("Email inválido."));
             
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user is null)
-                return new Result<LoginResult>(null, error: "Email or password incorrect");
+                return new Result<LoginResult>(new Exception("Utilizador ou password incorretos"));
             
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
             if (!result.Succeeded)
-                return new Result<LoginResult>(null, error: "Email or password incorrect");
+                return new Result<LoginResult>(new Exception("Utilizador ou password incorretos"));
             
             var token = await _tokenService.GenerateToken(user);
             
@@ -103,15 +103,14 @@ public class RegisterEndpoint: ICarterModule
             var command = data.Adapt<Login.Command>();
             
             var result = await sender.Send(command);
-            if (result.Error.IsSome)
-            {
-                var error = result.Error.OrElse("Some error occurred, no message was left");
-                return Results.Problem(detail: error, statusCode: 500);
-            }
-
-            var content = result.Content.OrElseThrow();
-            var controllerResult = content.Adapt<Login.ControllerResult>();
-            return Results.Ok(controllerResult);
+            return result.Match<IResult>(
+                controllerResult =>
+                {
+                    var content = controllerResult;
+                    var c = content.Adapt<Login.ControllerResult>();
+                    return Results.Ok(c);
+                },
+               error => Results.Problem(detail: error.Message, statusCode: 400));
         }).IncludeInOpenApi();
     }
 }

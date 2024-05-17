@@ -49,4 +49,9 @@ public class Option<T>: IEquatable<Option<T>>
     {
         return !(left == right);
     }
+    
+    public TY Match<TY>(Func<T, TY> some, Func<TY> none) where TY: unmanaged 
+    {
+        return _content is null ? none() : some(_content);
+    }
 }
