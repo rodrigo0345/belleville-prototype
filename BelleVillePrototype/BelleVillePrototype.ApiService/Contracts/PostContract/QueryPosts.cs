@@ -1,21 +1,20 @@
 
 namespace BelleVillePrototype.ApiService.Contracts.PostContract;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-[Json(typeof(StringEnumConverter))]
 public enum Order
 {
-  [EnumMember(Value = "ASC")]
     ASC = 0,
-
-  [EnumMember(Value = "DESC")]
     DESC = 1
 }
 
 public class QueryPosts
 {
-    public Guid? Id { get; set; }
+    public Guid? Id { get; set; } 
 
     public string OrderBy { get; set; } = "id";
+
     public Order Order { get; set; } = Order.ASC;
 
     public int Page { get; set; } = 1;

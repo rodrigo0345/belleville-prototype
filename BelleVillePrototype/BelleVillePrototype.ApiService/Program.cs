@@ -22,7 +22,9 @@ builder.Services.AddCarter(configurator: c =>
     c.WithResponseNegotiator<NewtonsoftJsonResponseNegotiator>();
 });
 
+
 // Add logger
+//
 builder.Services.AddLogging();
 
 // Add swagger
@@ -58,7 +60,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+});
 builder.Services.AddHttpLogging(options => { });
 builder.Services.AddTransient<ILogger>(
     provider => provider.GetRequiredService<ILoggerFactory>().CreateLogger("BelleVillePrototype.ApiService"));
@@ -91,7 +95,7 @@ builder.Services.AddAuthentication(options =>
         options.DefaultChallengeScheme =
             options.DefaultForbidScheme =
                 options.DefaultScheme =
-                    options.DefaultSignInScheme = 
+                    options.DefaultSignInScheme =
                         options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
@@ -154,8 +158,8 @@ if (app.Environment.IsDevelopment())
     {
         app.Logger.LogWarning(e, "An error occurred while migrating the database.");
     }
-    
-    
+
+
     // Map swagger api
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -166,7 +170,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.UseCors(); 
+app.UseCors();
 app.UseRouting();
 
 // tem de estar entre UseRouting e UseEndpoints

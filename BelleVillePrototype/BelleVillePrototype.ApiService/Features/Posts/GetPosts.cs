@@ -9,17 +9,18 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BelleVillePrototype.ApiService.Contracts.PostContract;
+using System;
 
-public static class GetPosts  
+public static class GetPosts
 {
     public class Command : QueryPosts, IRequest<Result<IEnumerable<PostEntity>>>
     {
-      
-    }
-    
-    public class ControllerResult: QueryPosts;
 
-    
+    }
+
+    public class ControllerResult : QueryPosts;
+
+
     public class Validator : AbstractValidator<Command>
     {
         public Validator()
@@ -63,31 +64,31 @@ public static class GetPosts
 
             try
             {
-              var query = _dbContext.Posts.AsQueryable();
+                var query = _dbContext.Posts.AsQueryable();
 
 
-              if(!String.IsNullOrWhiteSpace(request.OrderBy)) 
-              {
-
-                if(String.Compare(request.OrderBy, "Id", true) == 0)
+                if (!String.IsNullOrWhiteSpace(request.OrderBy))
                 {
-                  query = this.OrderBy(query, request.Order, (el) => el.Id);
-                }
-                else if(String.Compare(request.OrderBy, "Title", true) == 0)
-                {
-                  query = this.OrderBy(query, request.Order, (el) => el.Title);
-                }
-                else if(String.Compare(request.OrderBy, "Author", true) == 0)
-                {
-                  query = this.OrderBy(query, request.Order, (el) => el.Author ?? el.Title);
+
+                    if (String.Compare(request.OrderBy, "Id", true) == 0)
+                    {
+                        query = this.OrderBy(query, request.Order, (el) => el.Id);
+                    }
+                    else if (String.Compare(request.OrderBy, "Title", true) == 0)
+                    {
+                        query = this.OrderBy(query, request.Order, (el) => el.Title);
+                    }
+                    else if (String.Compare(request.OrderBy, "Author", true) == 0)
+                    {
+                        query = this.OrderBy(query, request.Order, (el) => el.Author ?? el.Title);
+                    }
+
                 }
 
-              }
+                query = query.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).AsQueryable();
 
-              query = query.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize);
-
-              var posts = await query.ToListAsync(cancellationToken);
-              return posts;
+                var posts = query.ToList();
+                return posts ?? [];
             }
             catch (Exception e)
             {
@@ -96,19 +97,30 @@ public static class GetPosts
         }
     }
 }
-public class GetPostsEndpoint : ICarterModule 
+public class GetPostsEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("posts", async ([FromQuery] QueryPosts query, ISender sender) =>
-        {
-            var command = query.Adapt<GetPosts.Command>();
-            
-            var result = await sender.Send(command);
-            return result.Match<IResult>(
-                entity => Results.Ok(entity.Select(e => e.Adapt<GetPosts.ControllerResult>())),
-                error => Results.Problem(detail: error.Message, statusCode: 400));
-        }).IncludeInOpenApi();
+
+    }
+}
+
+[ApiController]
+public class GetPostsController : ControllerBase
+{
+    [HttpGet("posts")]
+    public async Task<IActionResult> GetPosts([FromQuery] QueryPosts query, [FromServices] ISender sender, [FromServices] ILogger<GetPostsController> logger)
+    {
+        var command = query.Adapt<GetPosts.Command>();
+
+        var result = await sender.Send(command);
+        return result.Match<IActionResult>(
+            entity => Ok(entity.Select(e => e.Adapt<GetPosts.ControllerResult>())),
+            error =>
+            {
+                logger.LogError(error, "Error while getting posts");
+                return BadRequest(error.Message);
+            });
     }
 }
 
