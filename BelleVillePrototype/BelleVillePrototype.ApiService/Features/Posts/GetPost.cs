@@ -8,6 +8,7 @@ using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using BelleVillePrototype.ApiService.Contracts.PostContract;
 
 public static class GetPost
 {
@@ -16,7 +17,7 @@ public static class GetPost
         public Guid Id { get; set; } = Guid.Empty;
     }
     
-    public record ControllerResult(PostId Id, string Title, string? Author);
+    public class ControllerResult: QueryPost;
 
     
     public class Validator : AbstractValidator<Command>
@@ -66,7 +67,7 @@ public class GetPostEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("posts", async ([FromQuery] Guid id, ISender sender) =>
+        app.MapGet("post", async ([FromQuery] Guid id, ISender sender) =>
         {
             var command = new GetPost.Command()
             {
