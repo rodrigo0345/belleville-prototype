@@ -1,6 +1,7 @@
 using BelleVillePrototype.ApiService.Contracts.UserContract;
 using BelleVillePrototype.ApiService.Entities;
 using BelleVillePrototype.ApiService.Infrastructure;
+using BelleVillePrototype.ApiService.Shared.ModelState;
 using BelleVillePrototype.ApiService.Shared.Tokens;
 using Carter;
 using Carter.OpenApi;
@@ -8,6 +9,7 @@ using FluentValidation;
 using LanguageExt.Common;
 using Mapster;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
@@ -110,20 +112,29 @@ public static class Register
         }
     }
 }
-public class RegisterEndpoint: ICarterModule 
+
+[Route("register")]
+public class RegisterController: ControllerBase 
 {
-    public void AddRoutes(IEndpointRouteBuilder app)
-    {
-        app.MapPost("register", async ([FromBody] RegisterUserCommand data, ISender sender) =>
+        [HttpPost]
+        public async Task<IActionResult> Register([FromBody] RegisterUserCommand data, [FromServices] ISender sender)
         {
+            // validate model
+            var validate = ModelState.Validate();
+            var match = validate.Match<IActionResult?>(
+                item => null,
+                error => BadRequest(error.Message)
+            );
+            if (match is not null)
+                return match;
+            
             var command = data.Adapt<Register.Command>();
             
             var result = await sender.Send(command);
-            return result.Match<IResult>(
-                item => Results.Ok(item.Adapt<Register.ControllerResult>()),
-                error => Results.Problem(detail: error.Message, statusCode: 400)
+            return result.Match<IActionResult>(
+                item => Ok(item.Adapt<Register.ControllerResult>()),
+                error => BadRequest(error.Message)
             );
-        }).IncludeInOpenApi();
-    }
+        }
 }
 

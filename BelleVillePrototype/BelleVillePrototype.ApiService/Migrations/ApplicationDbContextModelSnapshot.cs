@@ -22,6 +22,64 @@ namespace BelleVillePrototype.ApiService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.ChaveEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<Guid>("ImovelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImovelId");
+
+                    b.ToTable("Chave");
+                });
+
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.ImovelEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Classificacao")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CodigoPostal")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Localidade")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Morada")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Imovel");
+                });
+
             modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.PostEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -64,6 +122,11 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -120,20 +183,21 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("b6f4dad2-65a3-4ed1-a325-0a8c962b09b1"),
+                            Id = new Guid("045f5db4-aefb-4465-8ba4-8f8599c330d6"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "15bc1e97-fb8d-437f-9275-a329a643f0ea",
+                            ConcurrencyStamp = "c32d9fc6-c8ce-4a62-9ce1-42a80037c28f",
                             Email = "admin@gmail.com",
                             EmailConfirmed = true,
                             FirstName = "",
+                            IsDeleted = false,
                             LastName = "",
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEHgfGIHOnTGI70hhas2FcFkOIzDyRuxOeiTxx9d5BVuKRmiCVL/Z4gSoGCv/VbBYIQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKMtl/INSm9F9jJeSa8W8F1VyDdsShFrC66To/nUYjAxD1ZfeHGtxwIx6kAVLMHd7w==",
                             Phone = "",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "9d73e154-2869-41f3-a8c6-d7cb7eb7fefb",
+                            SecurityStamp = "5840e6f2-e1f2-4954-a059-3b8cbcc2e0df",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         });
@@ -168,13 +232,13 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("6f0469f5-fd60-4a2a-8a06-1f3e7f8b0aba"),
+                            Id = new Guid("30b3b9b0-60ca-45eb-a1ea-f0db8c4f116f"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("b3292c9a-e632-4016-b0e9-67e37a75cec4"),
+                            Id = new Guid("996796f8-a842-473c-a365-cbded013a32f"),
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -266,8 +330,8 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("b6f4dad2-65a3-4ed1-a325-0a8c962b09b1"),
-                            RoleId = new Guid("6f0469f5-fd60-4a2a-8a06-1f3e7f8b0aba")
+                            UserId = new Guid("045f5db4-aefb-4465-8ba4-8f8599c330d6"),
+                            RoleId = new Guid("30b3b9b0-60ca-45eb-a1ea-f0db8c4f116f")
                         });
                 });
 
@@ -288,6 +352,17 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.ChaveEntity", b =>
+                {
+                    b.HasOne("BelleVillePrototype.ApiService.Entities.ImovelEntity", "Imovel")
+                        .WithMany("Chaves")
+                        .HasForeignKey("ImovelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Imovel");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -339,6 +414,11 @@ namespace BelleVillePrototype.ApiService.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.ImovelEntity", b =>
+                {
+                    b.Navigation("Chaves");
                 });
 #pragma warning restore 612, 618
         }

@@ -60,9 +60,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers(options =>
-{
-});
+builder.Services.AddControllers(options => { });
 builder.Services.AddHttpLogging(options => { });
 builder.Services.AddTransient<ILogger>(
     provider => provider.GetRequiredService<ILoggerFactory>().CreateLogger("BelleVillePrototype.ApiService"));

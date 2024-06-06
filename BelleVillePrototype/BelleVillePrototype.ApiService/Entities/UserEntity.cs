@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BelleVillePrototype.ApiService.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,11 +9,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BelleVillePrototype.ApiService.Entities;
 
 [EntityTypeConfiguration(typeof(UserEntityConfiguration))]
-public class UserEntity: IdentityUser<Guid>
+public class UserEntity: IdentityUser<Guid>, BaseEntityInterface
 {
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+
+    public bool IsDeleted { get; set; }
 }
 
 public class UserEntityConfiguration: IEntityTypeConfiguration<UserEntity>
@@ -30,6 +33,10 @@ public class UserEntityConfiguration: IEntityTypeConfiguration<UserEntity>
 
         builder.Property(b => b.Phone)
             .IsRequired();
+        
+        builder.Property(b => b.IsDeleted).HasDefaultValue(false);
+        
+        builder.HasQueryFilter(b => !b.IsDeleted);
     }
 }
 

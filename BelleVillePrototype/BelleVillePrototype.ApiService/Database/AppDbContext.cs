@@ -1,10 +1,12 @@
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using BelleVillePrototype.ApiService.Contracts;
 using BelleVillePrototype.ApiService.Entities;
 using Microsoft.EntityFrameworkCore;
 using BelleVillePrototype.ApiService.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace BelleVillePrototype.ApiService.Infrastructure;
 
@@ -13,8 +15,10 @@ public class ApplicationDbContext : IdentityDbContext<UserEntity, IdentityRole<G
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
-
+    
     public DbSet<PostEntity> Posts { get; set; }
+    public DbSet<ImovelEntity> Imoveis { get; set; }
+    public DbSet<ChaveEntity> Chaves { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,4 +62,16 @@ public class ApplicationDbContext : IdentityDbContext<UserEntity, IdentityRole<G
             UserId = adminUser.Id
         });
     }
+
+    public override EntityEntry Remove(object entity)
+    {
+        if (entity is BaseEntityInterface baseEntity)
+        {
+            baseEntity.IsDeleted = true;
+            
+            return base.Update(entity);
+        }
+        return base.Remove(entity);
+    }
+    
 }
