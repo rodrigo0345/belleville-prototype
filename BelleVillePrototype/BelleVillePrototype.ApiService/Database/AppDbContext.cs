@@ -19,6 +19,7 @@ public class ApplicationDbContext : IdentityDbContext<UserEntity, IdentityRole<G
     public DbSet<PostEntity> Posts { get; set; }
     public DbSet<ImovelEntity> Imoveis { get; set; }
     public DbSet<ChaveEntity> Chaves { get; set; }
+    public DbSet<TransactionEntity> Transactions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

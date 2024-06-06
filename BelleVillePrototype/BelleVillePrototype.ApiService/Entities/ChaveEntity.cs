@@ -20,6 +20,8 @@ public class ChaveEntity: BaseEntityInterface
     public ImovelId ImovelId { get; set; }
     public ImovelEntity Imovel { get; set; }
     
+    public List<TransactionEntity> Transactions { get; set; }
+    
     // comum a todas as entidades
     public bool IsDeleted { get; set; }
 }

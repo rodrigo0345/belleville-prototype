@@ -14,6 +14,8 @@ public class UserEntity: IdentityUser<Guid>, BaseEntityInterface
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+    
+    public List<TransactionEntity> Transactions { get; set; }
 
     public bool IsDeleted { get; set; }
 }

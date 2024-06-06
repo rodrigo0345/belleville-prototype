@@ -98,6 +98,44 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.ToTable("Posts");
                 });
 
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.TransactionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChaveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChaveId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Transaction");
+                });
+
             modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.UserEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -183,9 +221,9 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("045f5db4-aefb-4465-8ba4-8f8599c330d6"),
+                            Id = new Guid("19964e71-211f-4256-ac63-5fd542c14daf"),
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "c32d9fc6-c8ce-4a62-9ce1-42a80037c28f",
+                            ConcurrencyStamp = "860a662d-5832-4d84-b4c5-cdd0f3d0baae",
                             Email = "admin@gmail.com",
                             EmailConfirmed = true,
                             FirstName = "",
@@ -194,10 +232,10 @@ namespace BelleVillePrototype.ApiService.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GMAIL.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKMtl/INSm9F9jJeSa8W8F1VyDdsShFrC66To/nUYjAxD1ZfeHGtxwIx6kAVLMHd7w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEEzIS7NKNL1Rlk/qIQQO3j3X+HPrr/losJWRp3DmT0Z5hNF7wfhIla/eduIU2rum0g==",
                             Phone = "",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "5840e6f2-e1f2-4954-a059-3b8cbcc2e0df",
+                            SecurityStamp = "67961adc-3621-417e-a56a-363c66e80948",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         });
@@ -232,13 +270,13 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("30b3b9b0-60ca-45eb-a1ea-f0db8c4f116f"),
+                            Id = new Guid("a70ba982-bcc5-4814-90bc-dd3e47c2cad6"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("996796f8-a842-473c-a365-cbded013a32f"),
+                            Id = new Guid("0070b43f-9464-4504-abfa-541334150bd5"),
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -330,8 +368,8 @@ namespace BelleVillePrototype.ApiService.Migrations
                     b.HasData(
                         new
                         {
-                            UserId = new Guid("045f5db4-aefb-4465-8ba4-8f8599c330d6"),
-                            RoleId = new Guid("30b3b9b0-60ca-45eb-a1ea-f0db8c4f116f")
+                            UserId = new Guid("19964e71-211f-4256-ac63-5fd542c14daf"),
+                            RoleId = new Guid("a70ba982-bcc5-4814-90bc-dd3e47c2cad6")
                         });
                 });
 
@@ -363,6 +401,25 @@ namespace BelleVillePrototype.ApiService.Migrations
                         .IsRequired();
 
                     b.Navigation("Imovel");
+                });
+
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.TransactionEntity", b =>
+                {
+                    b.HasOne("BelleVillePrototype.ApiService.Entities.ChaveEntity", "Chave")
+                        .WithMany("Transactions")
+                        .HasForeignKey("ChaveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BelleVillePrototype.ApiService.Entities.UserEntity", "User")
+                        .WithMany("Transactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chave");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -416,9 +473,19 @@ namespace BelleVillePrototype.ApiService.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.ChaveEntity", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.ImovelEntity", b =>
                 {
                     b.Navigation("Chaves");
+                });
+
+            modelBuilder.Entity("BelleVillePrototype.ApiService.Entities.UserEntity", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }
